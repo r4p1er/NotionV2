@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -61,13 +62,14 @@ namespace NotionV2.API.Controllers
             return CreatedAtAction(nameof(Get), new {id = user.Id}, user);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Put([FromRoute] int id, [FromBody] UserDTO dto)
+        [HttpPut]
+        [Authorize]
+        public async Task<IActionResult> Put([FromBody] UserDTO dto)
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Login == User.Identity.Name);
             if (user == null)
             {
-                return NotFound();
+                return BadRequest(new {error = "Authentication token is obsolete."});
             }
 
             user.Login = dto.Login;
@@ -79,13 +81,14 @@ namespace NotionV2.API.Controllers
             return NoContent();
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete([FromRoute] int id)
+        [HttpDelete]
+        [Authorize]
+        public async Task<IActionResult> Delete()
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Login == User.Identity.Name);
             if (user == null)
             {
-                return NotFound();
+                return BadRequest(new {error = "Authentication token is obsolete."});
             }
 
             _context.Users.Remove(user);
