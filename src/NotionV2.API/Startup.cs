@@ -15,6 +15,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using NotionV2.API.Middlewares;
 using NotionV2.API.Models;
 
 namespace NotionV2.API
@@ -82,6 +83,8 @@ namespace NotionV2.API
             app.UseAuthentication();
             app.UseAuthorization();
 
+            app.UseTokenValidation();
+            
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
     }
