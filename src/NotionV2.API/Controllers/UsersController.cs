@@ -44,13 +44,12 @@ namespace NotionV2.API.Controllers
         [HttpPost]
         public async Task<ActionResult<User>> Post([FromBody] UserDTO dto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(x => x.Login == dto.Login);
-            if (user != null)
+            if (await _context.Users.AnyAsync(x => x.Login == dto.Login))
             {
                 return BadRequest(new {error = "User with this login already exists."});
             }
             
-            user = new User
+            var user = new User
             {
                 Login = dto.Login,
                 Password = BCrypt.Net.BCrypt.HashPassword(dto.Password + _configuration["Pepper"])
@@ -66,12 +65,12 @@ namespace NotionV2.API.Controllers
         [Authorize]
         public async Task<IActionResult> Put([FromBody] UserDTO dto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(x => x.Login == User.Identity.Name);
-            if (user == null)
+            if (await _context.Users.AnyAsync(x => x.Login == dto.Login) && dto.Login != User.Identity?.Name)
             {
-                return BadRequest(new {error = "Authentication token is obsolete."});
+                return BadRequest(new {error = "User with this login already exists."});
             }
-
+            
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Login == User.Identity.Name);
             user.Login = dto.Login;
             user.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password + _configuration["Pepper"]);
 
@@ -86,11 +85,6 @@ namespace NotionV2.API.Controllers
         public async Task<IActionResult> Delete()
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Login == User.Identity.Name);
-            if (user == null)
-            {
-                return BadRequest(new {error = "Authentication token is obsolete."});
-            }
-
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
 
